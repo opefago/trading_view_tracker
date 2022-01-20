@@ -1,4 +1,5 @@
 from websockets import client
+from websockets.exceptions import ConnectionClosedError
 from tenacity import retry, wait_exponential, retry_if_exception_type
 import asyncio
 import re
@@ -88,7 +89,7 @@ async def handle_price_quotes(trade_symbol, quote):
 
 
 @retry(wait=wait_exponential(multiplier=2, min=3, max=100),
-       retry=(retry_if_exception_type(ConnectionResetError) | retry_if_exception_type(TimeoutError)))
+       retry=(retry_if_exception_type(ConnectionClosedError) | retry_if_exception_type(TimeoutError)))
 async def websocket_connect():
     async with client.connect(websocket_uri, extra_headers={
         "Origin": "https://www.tradingview.com"
