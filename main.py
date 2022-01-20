@@ -1,5 +1,4 @@
 from websockets import client
-import tenacity
 from tenacity import retry, wait_exponential, retry_if_exception_type
 import asyncio
 import re
@@ -26,6 +25,7 @@ init_messages\
     .extend([{"m": "quote_add_symbols", "p": [quote_session, trading_pair, {"flags": ["force_permission"]}]}
              for trading_pair in trading_pairs])
 
+
 async def init_tradeview_socket(websocket):
     for m in init_messages:
         await websocket.send(unstrip(m))
@@ -39,37 +39,35 @@ def is_keep_alive(text):
 
 
 async def on_receive(websocket):
-    try:
-        data = await websocket.recv()
-        await handle_init_data(strip(data))
-        await init_tradeview_socket(websocket)
-        while True:
-            data = await websocket.recv()
-            if is_keep_alive(data):
-                await websocket.send(data)
-            else:
-                payloads = strip(data)
-                print(payloads)
-                for p in payloads:
-                    if p["m"] == "timescale_update":
-                        dates = [
-                            datetime.fromtimestamp(t["v"][0])
-                            for t in p["p"][1]["sds_1"]["s"]
-                        ]
-                        values = [
-                            t["v"][4]
-                            for t in p["p"][1]["sds_1"]["s"]
-                        ]
-                        await handle_time_scale_data(dates, values)
-                    elif p['m'] == 'du':
-                        await handle_price_change(p['p'][1]['sds_1']['s'])
-                    elif p['m'] == 'qsd':
-                        print(payloads)
-                        await handle_price_quotes(p['p'][1]['n'],   p['p'][1]['v'])
-                        pass
 
-    except ConnectionResetError as connErr:
-        print(connErr)
+    data = await websocket.recv()
+    await handle_init_data(strip(data))
+    await init_tradeview_socket(websocket)
+    while True:
+        data = await websocket.recv()
+        if is_keep_alive(data):
+            await websocket.send(data)
+        else:
+            payloads = strip(data)
+            print(payloads)
+            for p in payloads:
+                if p["m"] == "timescale_update":
+                    dates = [
+                        datetime.fromtimestamp(t["v"][0])
+                        for t in p["p"][1]["sds_1"]["s"]
+                    ]
+                    values = [
+                        t["v"][4]
+                        for t in p["p"][1]["sds_1"]["s"]
+                    ]
+                    await handle_time_scale_data(dates, values)
+                elif p['m'] == 'du':
+                    await handle_price_change(p['p'][1]['sds_1']['s'])
+                elif p['m'] == 'qsd':
+                    print(payloads)
+                    await handle_price_quotes(p['p'][1]['n'],   p['p'][1]['v'])
+                    pass
+
 
 async def handle_init_data(data):
     print(f'Init data: {data}')
