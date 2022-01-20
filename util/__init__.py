@@ -4,6 +4,14 @@ import re
 import json
 
 
+def generate_chart_session():
+    return f"cs_{get_random_alpha(10)}"
+
+
+def generate_quote_session():
+    return  f"qs_{get_random_alpha(10)}"
+
+
 def get_random_alpha(length):
     """Generate a random string"""
     str = string.ascii_letters
