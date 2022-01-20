@@ -4,26 +4,29 @@ import asyncio
 import re
 from datetime import datetime
 from util import strip, unstrip, generate_quote_session, generate_chart_session
-trading_pairs = ['BINANCE:LUNAUSDT', 'BITSTAMP:BTCUSD']
+
+trading_symbols = ['BINANCE:LUNAUSDT', 'BITSTAMP:BTCUSD']
 websocket_uri = f'wss://data.tradingview.com/socket.io/websocket?from=chart/&date=2022_01_20-13_54'
 
 chart_session = generate_chart_session()
 quote_session = generate_quote_session()
 
+# commented out code section for creating charts
 init_messages = [
     {"m": "set_data_quality", "p": ["low"]},
     {"m": "set_auth_token", "p": ["unauthorized_user_token"]},
-    {"m": "chart_create_session", "p": [chart_session, ""]},
-    {"m": "resolve_symbol",
-     "p": [chart_session, "sds_sym_1", "={\"symbol\":\"%s\", \"adjustment\":\"splits\"}" % trading_pairs[0]]},
-    {"m": "create_series", "p": [chart_session, "sds_1", "s1", "sds_sym_1", "D", 300, ""]},
-    {"m": "switch_timezone", "p": [chart_session, "Etc/UTC"]},
+    # {"m": "chart_create_session", "p": [chart_session, ""]},
+    # {"m": "resolve_symbol",
+    #  "p": [chart_session, "sds_sym_1", "={\"symbol\":\"%s\", \"adjustment\":\"splits\"}" % trading_symbols[0]]},
+    # {"m": "create_series", "p": [chart_session, "sds_1", "s1", "sds_sym_1", "D", 300, ""]},
+    # {"m": "switch_timezone", "p": [chart_session, "Etc/UTC"]},
     {"m": "quote_create_session", "p": [quote_session]},
 ]
 
-init_messages\
-    .extend([{"m": "quote_add_symbols", "p": [quote_session, trading_pair, {"flags": ["force_permission"]}]}
-             for trading_pair in trading_pairs])
+# adds more than one quote symbol
+init_messages \
+    .extend([{"m": "quote_add_symbols", "p": [quote_session, trading_symbol, {"flags": ["force_permission"]}]}
+             for trading_symbol in trading_symbols])
 
 
 async def init_tradeview_socket(websocket):
@@ -39,7 +42,6 @@ def is_keep_alive(text):
 
 
 async def on_receive(websocket):
-
     data = await websocket.recv()
     await handle_init_data(strip(data))
     await init_tradeview_socket(websocket)
@@ -49,7 +51,6 @@ async def on_receive(websocket):
             await websocket.send(data)
         else:
             payloads = strip(data)
-            print(payloads)
             for p in payloads:
                 if p["m"] == "timescale_update":
                     dates = [
@@ -64,8 +65,7 @@ async def on_receive(websocket):
                 elif p['m'] == 'du':
                     await handle_price_change(p['p'][1]['sds_1']['s'])
                 elif p['m'] == 'qsd':
-                    print(payloads)
-                    await handle_price_quotes(p['p'][1]['n'],   p['p'][1]['v'])
+                    await handle_price_quotes(p['p'][1]['n'], p['p'][1]['v'])
                     pass
 
 
@@ -82,8 +82,8 @@ async def handle_price_change(live_price):
     print(f"Price: {live_price}")
 
 
-async def handle_price_quotes(trade_pair, quote):
-    print(f"Price Quotes for {trade_pair}: {quote}")
+async def handle_price_quotes(trade_symbol, quote):
+    print(f"Price Quotes {quote}, for symbol: {trade_symbol}")
 
 
 @retry(wait=wait_exponential(multiplier=2, min=3, max=100),
