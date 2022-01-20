@@ -12,6 +12,7 @@ chart_session = generate_chart_session()
 quote_session = generate_quote_session()
 
 # commented out code section for creating charts
+# uncomment if you want chart data
 init_messages = [
     {"m": "set_data_quality", "p": ["low"]},
     {"m": "set_auth_token", "p": ["unauthorized_user_token"]},
