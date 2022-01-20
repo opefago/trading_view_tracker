@@ -4,11 +4,11 @@ import re
 from datetime import datetime
 from util import strip, unstrip, get_random_alpha
 ticker = 'BINANCE:LUNAUSDT'
-websocketUri = f'wss://data.tradingview.com/socket.io/websocket?from=chart/&date=2022_01_20-13_54'
+websocket_uri = f'wss://data.tradingview.com/socket.io/websocket?from=chart/&date=2022_01_20-13_54'
 chart_session = f"cs_{get_random_alpha(10)}"
 quote_session = f"qs_{get_random_alpha(10)}"
 
-initMessages = [
+init_messages = [
     {"m": "set_data_quality", "p": ["low"]},
     {"m": "set_auth_token", "p": ["unauthorized_user_token"]},
     {"m": "chart_create_session", "p": [chart_session, ""]},
@@ -20,7 +20,7 @@ initMessages = [
 
 
 async def init_tradeview_socket(websocket):
-    for m in initMessages:
+    for m in init_messages:
         await websocket.send(unstrip(m))
 
 
@@ -70,7 +70,7 @@ async def handle_price_change(live_price):
 
 
 async def websocket_connect():
-    async with client.connect(websocketUri, extra_headers={
+    async with client.connect(websocket_uri, extra_headers={
         "Origin": "https://www.tradingview.com"
     }) as websocket:
         await on_receive(websocket)
